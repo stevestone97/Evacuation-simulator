@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Third Floor — Evacuation Simulator v3</title>
+  <style>
+    :root {
+      font: 14px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: #1f3248;
+      background: #f2f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid #cbdbea;
+      background: #f3f7fd;
+      color: #27507b;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-weight: 600;
+    }
+
+    button:hover {
+      filter: brightness(.98);
+    }
+
+    button.primary {
+      background: #2366bf;
+      border-color: #2366bf;
+      color: #fff;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: default;
+    }
+
+    select,
+    input {
+      min-width: 0;
+      padding: 7px 9px;
+      border: 1px solid #cddae7;
+      border-radius: 7px;
+      background: white;
+      color: #20384f;
+    }
+
+    .top {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px max(20px, calc((100vw - 1220px) / 2));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .top h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .sub {
+      font-size: 12px;
+      color: #6d8092;
+      margin-top: 3px;
+    }
+
+    .pill {
+      font-size: 11px;
+      border: 1px solid #bdd7ce;
+      border-radius: 20px;
+      padding: 5px 11px;
+      color: #287157;
+      background: #edf9f3;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .layout {
+      max-width: 1220px;
+      padding: 19px 16px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(310px, .95fr);
+      gap: 17px;
+      align-items: start;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #e1e9f1;
+      border-radius: 13px;
+      padding: 18px;
+      box-shadow: 0 2px 11px #172f4910;
+    }
+
+    .panel h2 {
+      font-size: 15px;
+      margin: 0 0 13px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .controls select {
+      flex: 1;
+      min-width: 135px;
+    }
+
+    .map-box {
+      background: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #e2eaf2;
+      border-radius: 10px;
+      margin-top: 13px;
+      overflow: hidden;
+      min-height: 340px;
+    }
+
+    #map {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: min(73vh, 780px);
+      cursor: crosshair;
+      aspect-ratio: 371 / 802;
+      touch-action: manipulation;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11px;
+      color: #63778a;
+      margin-top: 10px;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #74849a;
+      margin: 9px 0 0;
+    }
+
+    .tooltip {
+      font-size: 12px;
+      color: #345b85;
+      min-height: 19px;
+      margin-top: 9px;
+    }
+
+    .error {
+      font-size: 12px;
+      color: #b72c30;
+      margin-top: 7px;
+      min-height: 18px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-row h2 {
+      margin: 0;
+    }
+
+    .tag {
+      font-size: 10px;
+      background: #eaf3ff;
+      border: 1px solid #c5daf8;
+      color: #255d9f;
+      padding: 4px 8px;
+      border-radius: 15px;
+      font-weight: 650;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin: 13px 0 15px;
+    }
+
+    .stat {
+      background: #f3f7fc;
+      border-radius: 9px;
+      padding: 10px 7px;
+      text-align: center;
+    }
+
+    .stat strong {
+      font-size: 19px;
+      display: block;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat span {
+      font-size: 11px;
+      color: #647b92;
+    }
+
+    .section {
+      font-size: 12px;
+      color: #2a4564;
+      font-weight: 750;
+      margin: 20px 0 10px;
+      padding-top: 12px;
+      border-top: 1px solid #e8edf3;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric {
+      background: #f5f8fc;
+      border: 1px solid #edf1f5;
+      border-radius: 9px;
+      padding: 10px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 19px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .metric span {
+      font-size: 11px;
+      color: #64788f;
+    }
+
+    .subnote {
+      font-size: 11px;
+      color: #7a8ba0;
+      line-height: 1.5;
+      margin: 8px 0;
+    }
+
+    .exit-row {
+      display: grid;
+      grid-template-columns: 27px 1fr 40px;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+
+    .exit-track {
+      height: 9px;
+      border-radius: 6px;
+      background: #e9eff6;
+      overflow: hidden;
+    }
+
+    .exit-fill {
+      height: 100%;
+      background: #64b490;
+      border-radius: 6px;
+      transition: width .2s;
+    }
+
+    .download {
+      display: block;
+      padding: 10px 12px;
+      text-align: center;
+      background: #e9f5ee;
+      border: 1px solid #b5dac6;
+      border-radius: 8px;
+      color: #206a43;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 13px;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field label {
+      display: block;
+      color: #63788d;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .field input {
+      width: 100%;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .room-fields {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .room-fields input {
+      width: 100%;
+    }
+
+    details {
+      margin: 12px 0;
+    }
+
+    summary {
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: #2c64a1;
+    }
+
+    .length-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .length-grid input {
+      width: 100%;
+      font-size: 12px;
+    }
+
+    .length-grid label {
+      font-size: 10px;
+      color: #718397;
+    }
+
+    .toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #425c77;
+    }
+
+    .toggles input {
+      accent-color: #2469c5;
+      vertical-align: middle;
+    }
+
+    .note {
+      font-size: 11px;
+      color: #677b8e;
+      line-height: 1.6;
+    }
+
+    #history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    #history-table th,
+    #history-table td {
+      border-bottom: 1px solid #e8eef4;
+      padding: 7px 4px;
+      text-align: right;
+    }
+
+    #history-table th:first-child,
+    #history-table td:first-child {
+      text-align: left;
+    }
+
+    .eventlog {
+      font-size: 11px;
+      color: #586f84;
+      max-height: 110px;
+      overflow-y: auto;
+      background: #f5f8fb;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    #trend {
+      width: 100%;
+      height: 116px;
+      background: #fbfcff;
+      border: 1px solid #e9eef6;
+      border-radius: 8px;
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+        max-width: 700px;
+      }
+
+      .top {
+        padding: 14px 18px;
+      }
+
+      .top .pill {
+        display: none;
+      }
+
+      #map {
+        max-height: 750px;
+      }
+    }
+
+    @media (max-width: 460px) {
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .controls select {
+        min-width: 0;
+      }
+
+      .metrics {
+        gap: 6px;
+      }
+
+      .metric strong {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Third-floor evacuation simulator</h1>
+      <div class="sub">Third-floor map · classroom group routing · live direction signs · optional C routing</div>
+    </div>
+    <span class="pill" id="connection">Connecting…</span>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>Simulation</h2>
+      <div class="controls">
+        <button class="primary" id="play">▶ Start</button>
+        <button id="reset">↺ Reset</button>
+        
+        <select id="algorithm" title="Routing algorithm">
+          <!--DROPDOWN menu- ADD new algorithms here-->
+          <option value="dijkstra">Python · Dijkstra</option>
+          <option value="bidirectional">Python · Bidirectional Dijkstra</option>
+          <option value="c_test">C · Test algorithm</option>
+        </select>
+        
+        <select id="speedup" title="Simulation speed">
+          <option value="1">1× speed</option>
+          <option selected value="4">4× speed</option>
+          <option value="8">8× speed</option>
+          <option value="16">16× speed</option>
+        </select>
+      </div>
+
+      <div class="map-box">
+        <canvas
+          id="map"
+          width="742"
+          height="1604"
+          aria-label="Third-floor map with routes and moving students"
+        ></canvas>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:#2b83d6"></i>People</span>
+        <span><i style="background:#4aab70"></i>Room connection</span>
+        <span><i style="background:#e4b85d"></i>Selected route</span>
+        <span><i style="background:#d85050"></i>Blocked</span>
+        <span><i style="background:#249a6a"></i>Next-node arrow</span>
+      </div>
+
+      <div class="toggles">
+        <label><input id="show-costs" type="checkbox"> Show dynamic edge costs</label>
+        <label><input id="show-people" type="checkbox" checked> Show people</label>
+        <label><input id="show-signs" type="checkbox" checked> Show node arrows</label>
+      </div>
+
+      <p class="hint">
+        Green arrows show each node's next recommended connection. Classroom members
+        share an initial route until their first corridor sign; corridor arrows may
+        adapt to congestion. Click a connection to block/reopen it. Already moving
+        people finish their current edge.
+      </p>
+      <div class="tooltip" id="tooltip">
+        Hover over a connection to inspect travel cost.
+      </div>
+      <div class="error" id="error"></div>
+
+      <div class="section">Classroom route</div>
+      <div class="controls">
+        <label for="selected-room">Classroom</label>
+        <select id="selected-room">
+          <option>K1</option>
+          <option>K2</option>
+          <option>K3</option>
+          <option>K4</option>
+          <option>K5</option>
+          <option>K6</option>
+        </select>
+        <b id="route-label" style="font-size:12px;color:#3d617f">—</b>
+      </div>
+      <p class="subnote" id="route-cost">
+        The selected route is highlighted in yellow. Initial classroom instructions
+        remain shared up to the first corridor sign.
+      </p>
+    </section>
+
+    <aside class="panel">
+      <div class="header-row">
+        <h2>Simulation results</h2>
+        <span class="tag" id="algo-label">Dijkstra</span>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <strong id="elapsed">0.0 s</strong>
+          <span>simulated time</span>
+        </div>
+        <div class="stat">
+          <strong id="evac">0 / 60</strong>
+          <span>evacuated</span>
+        </div>
+        <div class="stat">
+          <strong id="decisions">0</strong>
+          <span>route searches</span>
+        </div>
+      </div>
+
+      <div class="section">Algorithm efficiency</div>
+      <div class="metrics">
+        <div class="metric"><strong id="total-routing">0 ms</strong><span>Total routing time</span></div>
+        <div class="metric"><strong id="avg-routing">—</strong><span>Avg. search time</span></div>
+        <div class="metric"><strong id="max-routing">—</strong><span>Max. search time</span></div>
+        <div class="metric"><strong id="explored">0</strong><span>Nodes explored</span></div>
+        <div class="metric"><strong id="relaxations">0</strong><span>Relaxation attempts</span></div>
+        <div class="metric"><strong id="reroutes">0</strong><span>Committed route changes</span></div>
+      </div>
+
+      <div class="section">Evacuation & adaptability</div>
+      <div class="metrics">
+        <div class="metric"><strong id="mean-exit">—</strong><span>Mean exit time</span></div>
+        <div class="metric"><strong id="max-exit">—</strong><span>Last person exit time</span></div>
+        <div class="metric"><strong id="mean-distance">—</strong><span>Avg. distance walked</span></div>
+        <div class="metric"><strong id="peak-queue">0</strong><span>Maximum single exit queue</span></div>
+      </div>
+
+      <p class="subnote">
+        Averages are calculated over evacuated people only until the run finishes.
+        Search metrics count uncached route computations, not individual decisions
+        by every person.
+      </p>
+
+      <div class="section">Evacuation progress</div>
+      <canvas id="trend" width="620" height="232"></canvas>
+      <div class="section">Exit distribution</div>
+      <div id="exit-list"></div>
+
+      <a id="export" class="download" href="/api/export">↓ Download comparison CSV</a>
+      <p class="subnote">
+        Completed runs are preserved until the server closes. Export includes the
+        active run and scenario settings.
+      </p>
+
+      <div class="section">
+        Completed runs
+        <span id="history-count" style="font-weight:400;color:#7b8da0">(0)</span>
+      </div>
+      <div id="history">No completed runs yet.</div>
+
+      <div class="section">Scenario parameters</div>
+      <div id="room-fields" class="room-fields"></div>
+      <div class="fields" style="margin-top:10px">
+        <div class="field">
+          <label for="walk-speed">Walking speed (m/s)</label>
+          <input id="walk-speed" type="number" min="0.2" max="3" step="0.1" value="1.2">
+        </div>
+        <div class="field">
+          <label for="corridor-flow">Connection flow (people/s)</label>
+          <input id="corridor-flow" type="number" min="0.2" max="20" step="0.1" value="2">
+        </div>
+        <div class="field full">
+          <label for="exit-capacity">Each exit service capacity (people/s)</label>
+          <input id="exit-capacity" type="number" min="0.2" max="20" step="0.1" value="1">
+        </div>
+      </div>
+
+      <details>
+        <summary>Edit measured connection lengths</summary>
+        <p class="subnote">
+          Defaults are the 17 distance labels from your annotated map (provisionally
+          treated as metres). They have not been independently verified.
+        </p>
+        <div class="length-grid" id="length-grid"></div>
+      </details>
+
+      <button id="apply" class="primary" style="width:100%">
+        Apply parameters & restart
+      </button>
+      <p class="note">
+        Dynamic cost = length/speed + directional waiting/connection flow. Entering
+        an exit adds a queue/service penalty. All exits use the same service
+        capacity by default.
+      </p>
+
+      <div class="section">Events</div>
+      <div class="eventlog" id="events">No incidents.</div>
+    </aside>
+  </main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('map');
+const ctx = canvas.getContext('2d');
+const base = new Image();
+base.src = '/assets/third_floor_clean.png';
+
+const W = 371;
+const H = 802;
+const scale = 2;
+
+let model = null;
+let hover = null;
+let running = false;
+let busy = false;
+let timer = null;
+let trend = [];
+
+const fmt = (n, d = 1) => (
+  n === null || n === undefined
+    ? '—'
+    : Number(n).toLocaleString('en-US', {
+      maximumFractionDigits: d,
+      minimumFractionDigits: d,
+    })
+);
+const int = n => Number(n).toLocaleString('en-US');
+
+function pathLength(points) {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    total += Math.hypot(
+      points[i][0] - points[i - 1][0],
+      points[i][1] - points[i - 1][1],
+    );
+  }
+  return total;
+}
+
+function atProgress(points, progress) {
+  let remaining = pathLength(points) * progress;
+
+  for (let i = 1; i < points.length; i++) {
+    const start = points[i - 1];
+    const end = points[i];
+    const segmentLength = Math.hypot(
+      end[0] - start[0],
+      end[1] - start[1],
+    );
+
+    if (remaining <= segmentLength || i === points.length - 1) {
+      const ratio = segmentLength
+        ? Math.min(1, remaining / segmentLength)
+        : 0;
+      return [
+        start[0] + (end[0] - start[0]) * ratio,
+        start[1] + (end[1] - start[1]) * ratio,
+      ];
+    }
+
+    remaining -= segmentLength;
+  }
+
+  return points[0];
+}
+
+function distSegment(point, start, end) {
+  const x = end[0] - start[0];
+  const y = end[1] - start[1];
+  const lengthSquared = x * x + y * y;
+  const ratio = lengthSquared
+    ? Math.max(
+      0,
+      Math.min(
+        1,
+        (
+          (point[0] - start[0]) * x
+          + (point[1] - start[1]) * y
+        ) / lengthSquared,
+      ),
+    )
+    : 0;
+
+  return Math.hypot(
+    point[0] - start[0] - x * ratio,
+    point[1] - start[1] - y * ratio,
+  );
+}
+
+function nearNode(x, y) {
+  if (!model) {
+    return null;
+  }
+
+  let closest = null;
+  for (const node of Object.values(model.nodes)) {
+    const distance = Math.hypot(node.x - x, node.y - y);
+    if (distance < 15 && (!closest || distance < closest.distance)) {
+      closest = { ...node, distance };
+    }
+  }
+
+  return closest;
+}
+
+function nearEdge(x, y) {
+  if (!model) {
+    return null;
+  }
+
+  let closest = null;
+  for (const edge of model.edges) {
+    let distance = Infinity;
+    for (let i = 1; i < edge.points.length; i++) {
+      distance = Math.min(
+        distance,
+        distSegment([x, y], edge.points[i - 1], edge.points[i]),
+      );
+    }
+
+    if (!closest || distance < closest.distance) {
+      closest = { ...edge, distance };
+    }
+  }
+
+  return closest && closest.distance < 10 ? closest : null;
+}
+
+function stroke(points, color, width = 2, dash = []) {
+  if (points.length < 2) {
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(...points[i]);
+  }
+
+  ctx.lineWidth = width;
+  ctx.strokeStyle = color;
+  ctx.setLineDash(dash);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function dot(x, y, radius, color, outline = '#fff') {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  if (outline) {
+    ctx.lineWidth = .8;
+    ctx.strokeStyle = outline;
+    ctx.stroke();
+  }
+}
+
+function drawDirectionArrows() {
+  if (!$('show-signs').checked) {
+    return;
+  }
+
+  for (const [nodeId, sign] of Object.entries(model.signs || {})) {
+    const node = model.nodes[nodeId];
+    if (!node) {
+      continue;
+    }
+
+    const next = sign.next;
+    if (!next) {
+      // No accessible exit: a warning, not an invented arrow.
+      const x = node.x + 15;
+      const y = node.y - 15;
+      dot(x, y, 7, '#fff', '#bd303f');
+      ctx.strokeStyle = '#bd303f';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 2.7, y - 2.7);
+      ctx.lineTo(x + 2.7, y + 2.7);
+      ctx.moveTo(x + 2.7, y - 2.7);
+      ctx.lineTo(x - 2.7, y + 2.7);
+      ctx.stroke();
+      continue;
+    }
+
+    const edge = model.edges.find(
+      candidate => (
+        (candidate.a === nodeId && candidate.b === next)
+        || (candidate.b === nodeId && candidate.a === next)
+      ),
+    );
+    if (!edge || edge.blocked) {
+      continue;
+    }
+
+    const points = edge.a === nodeId
+      ? edge.points
+      : edge.points.slice().reverse();
+    let dx = 0;
+    let dy = 0;
+
+    for (let i = 1; i < points.length; i++) {
+      dx = points[i][0] - points[0][0];
+      dy = points[i][1] - points[0][1];
+      if (Math.hypot(dx, dy) > 1) {
+        break;
+      }
+    }
+
+    const distance = Math.hypot(dx, dy) || 1;
+    const ux = dx / distance;
+    const uy = dy / distance;
+    const baseX = node.x + ux * 23;
+    const baseY = node.y + uy * 23;
+
+    dot(baseX, baseY, 9, 'rgba(255,255,255,.96)', '#168653');
+    ctx.strokeStyle = '#178957';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(baseX - ux * 4, baseY - uy * 4);
+    ctx.lineTo(baseX + ux * 5, baseY + uy * 5);
+
+    const tipX = baseX + ux * 5;
+    const tipY = baseY + uy * 5;
+    ctx.moveTo(
+      tipX - ux * 4 - uy * 3.5,
+      tipY - uy * 4 + ux * 3.5,
+    );
+    ctx.lineTo(tipX, tipY);
+    ctx.lineTo(
+      tipX - ux * 4 + uy * 3.5,
+      tipY - uy * 4 - ux * 3.5,
+    );
+    ctx.stroke();
+  }
+}
+
+function draw() {
+  if (!model) {
+    return;
+  }
+
+  ctx.save();
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (base.complete && base.naturalWidth) {
+    ctx.drawImage(base, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#f2f5f8';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const edgeColors = {
+    corridor: '#3988df',
+    classroom: '#58b578',
+    room: '#e8eaf0',
+    exit: '#dc7ead',
+  };
+  for (const edge of model.edges) {
+    let color = edgeColors[edge.kind];
+    if (edge.blocked) {
+      color = '#d83f42';
+    }
+    if (hover && hover.id === edge.id) {
+      stroke(edge.points, '#fff', 6);
+    }
+    stroke(
+      edge.points,
+      color,
+      hover && hover.id === edge.id ? 3.4 : 2.1,
+      edge.blocked ? [6, 4] : [],
+    );
+  }
+
+  const route = model.routes[$('selected-room').value];
+  const displayPath = (
+    route && route.initial_path && route.initial_path.length > 1
+      ? route.initial_path
+      : route?.path
+  );
+  if (displayPath && displayPath.length > 1) {
+    for (let i = 1; i < displayPath.length; i++) {
+      const start = displayPath[i - 1];
+      const end = displayPath[i];
+      const edge = model.edges.find(candidate => (
+        (candidate.a === start && candidate.b === end)
+        || (candidate.a === end && candidate.b === start)
+      ));
+
+      if (edge && !edge.blocked) {
+        const points = edge.a === start
+          ? edge.points
+          : edge.points.slice().reverse();
+        stroke(points, '#fff9df', 6);
+        stroke(points, '#e6b548', 3.4);
+      }
+    }
+  }
+
+  if ($('show-costs').checked) {
+    for (const edge of model.edges) {
+      const point = atProgress(edge.points, .52);
+      const text = edge.blocked
+        ? '×'
+        : fmt(Math.max(edge.cost_ab, edge.cost_ba), 1) + 's';
+      ctx.font = '10px system-ui';
+      const width = ctx.measureText(text).width + 8;
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillRect(point[0] - width / 2, point[1] - 7, width, 15);
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = edge.blocked ? '#b31d24' : '#254a6e';
+      ctx.fillText(text, point[0], point[1]);
+    }
+  }
+
+  if ($('show-people').checked) {
+    for (const student of model.students) {
+      let x;
+      let y;
+
+      if (student.state === 'moving') {
+        const edge = model.edges.find(candidate => (
+          (candidate.a === student.src && candidate.b === student.dst)
+          || (candidate.a === student.dst && candidate.b === student.src)
+        ));
+        if (!edge) {
+          continue;
+        }
+
+        const points = edge.a === student.src
+          ? edge.points
+          : edge.points.slice().reverse();
+        [x, y] = atProgress(points, student.progress);
+
+        const previousPoint = atProgress(
+          points,
+          Math.max(0, student.progress - .01),
+        );
+        const nextPoint = atProgress(
+          points,
+          Math.min(1, student.progress + .01),
+        );
+        const dx = nextPoint[0] - previousPoint[0];
+        const dy = nextPoint[1] - previousPoint[1];
+        const distance = Math.hypot(dx, dy) || 1;
+        const side = (student.id % 3 - 1) * 2.2;
+        x += -dy / distance * side;
+        y += dx / distance * side;
+      } else {
+        const node = model.nodes[student.node];
+        if (!node) {
+          continue;
+        }
+
+        const angle = student.id * 2.39996;
+        const radius = 13 + (student.id % 4) * 4;
+        x = node.x + Math.cos(angle) * radius;
+        y = node.y + Math.sin(angle) * radius;
+      }
+
+      const inExitQueue = student.state === 'exit_queue';
+      dot(
+        x,
+        y,
+        inExitQueue ? 3.0 : 2.7,
+        inExitQueue ? '#f5a33c' : '#2586d8',
+      );
+    }
+  }
+
+  for (const node of Object.values(model.nodes)) {
+    const isRoom = node.type === 'room';
+    const isExit = node.type === 'exit';
+    dot(
+      node.x,
+      node.y,
+      isRoom ? 11 : isExit ? 11 : 10,
+      isRoom ? '#e9f7ed' : isExit ? '#fbe8ef' : '#e5f1ff',
+      isRoom ? '#3b9d54' : isExit ? '#b83972' : '#398de1',
+    );
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = isRoom ? '#226836' : isExit ? '#a12e61' : '#2268aa';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(node.id, node.x, node.y + .3);
+  }
+
+  drawDirectionArrows();
+  ctx.restore();
+  updatePanel();
+}
+
+function updatePanel() {
+  const metrics = model.metrics;
+
+  $('elapsed').textContent = fmt(metrics.sim_time_s) + ' s';
+  $('evac').textContent = `${metrics.evacuated} / ${metrics.total}`;
+  $('decisions').textContent = int(metrics.route_decisions);
+  $('total-routing').textContent = fmt(metrics.routing_total_ms, 3) + ' ms';
+  $('avg-routing').textContent = metrics.routing_avg_ms === null
+    ? '—'
+    : fmt(metrics.routing_avg_ms, 4) + ' ms';
+  $('max-routing').textContent = metrics.routing_max_ms === null
+    ? '—'
+    : fmt(metrics.routing_max_ms, 4) + ' ms';
+  $('explored').textContent = int(metrics.nodes_explored);
+  $('relaxations').textContent = int(metrics.relaxations);
+  $('mean-exit').textContent = metrics.mean_exit_time_s === null
+    ? '—'
+    : fmt(metrics.mean_exit_time_s) + ' s';
+  $('max-exit').textContent = metrics.max_exit_time_s === null
+    ? '—'
+    : fmt(metrics.max_exit_time_s) + ' s';
+  $('mean-distance').textContent = metrics.avg_walk_distance_m === null
+    ? '—'
+    : fmt(metrics.avg_walk_distance_m) + ' m';
+  $('peak-queue').textContent = int(metrics.max_exit_queue);
+  $('reroutes').textContent = int(metrics.reroutes);
+  
+  // ADD NEW ALGORITHM LABELS HERE -updates the label in the top right of the results panel
+  $('algo-label').textContent = {
+    dijkstra: 'Python Dijkstra',
+    bidirectional: 'Python Bidirectional',
+    c_test: 'C Test',
+  }[model.algorithm];
+  
+  $('connection').textContent = model.c_available
+    ? 'Server connected · C available'
+    : 'Server connected · Python ready';
+
+  const route = model.routes[$('selected-room').value];
+  const assigned = route?.initial_path || [];
+  const current = route?.path || [];
+  const selectedPath = assigned.length ? assigned : current;
+  $('route-label').textContent = selectedPath.length
+    ? selectedPath.join(' → ')
+    : 'No available route';
+  $('route-cost').textContent = assigned.length
+    ? `Yellow: initially assigned group route. Live suggestion: ${
+      current.length ? current.join(' → ') : 'none'
+    }. Students follow the shared assignment until reaching their first corridor node.`
+    : current.length
+      ? `Pre-start preview (not yet assigned). Estimated current cost: ${fmt(route.cost, 2)} s.`
+      : 'No accessible exit from this classroom.';
+
+  $('exit-list').innerHTML = ['U1', 'U2'].map(exit => {
+    const count = model.exit_counts[exit];
+    const percentage = metrics.evacuated
+      ? 100 * count / metrics.evacuated
+      : 0;
+    return `
+      <div class="exit-row">
+        <b>${exit}</b>
+        <div class="exit-track">
+          <div class="exit-fill" style="width:${percentage}%"></div>
+        </div>
+        <b style="text-align:right">${count}</b>
+      </div>
+      <div class="subnote" style="margin-top:-7px">
+        Current queue: ${model.exit_queues[exit]}
+      </div>
+    `;
+  }).join('');
+
+  $('history-count').textContent = `(${model.history.length})`;
+  $('history').innerHTML = model.history.length
+    ? `
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Algorithm</th>
+            <th>Evacuation</th>
+            <th>Searches</th>
+            <th>Reroutes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${model.history.slice().reverse().map(run => `
+            <tr>
+              <td>${{
+                //ADD NEW ALGORITHM HERE - Update the label in the completed runs table
+                dijkstra: 'Dijkstra',
+                bidirectional: 'Bi-Dijkstra',
+                c_test: 'C Test',
+              }[run.algorithm]}</td>
+              <td>${fmt(run.sim_time_s)}s</td>
+              <td>${run.route_decisions}</td>
+              <td>${run.reroutes}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `
+    : '<div class="subnote">Complete a run to see comparisons here.</div>';
+  $('events').textContent = model.events.length
+    ? model.events.slice().reverse().join('\n')
+    : 'No incidents.';
+
+  drawTrend();
+  if (model.complete && running) {
+    pause();
+    $('play').textContent = '✓ Completed';
+  }
+}
+
+function drawTrend() {
+  const canvas = $('trend');
+  const context = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = '#fbfcff';
+  context.fillRect(0, 0, width, height);
+
+  const data = trend.length
+    ? trend
+    : [{ t: 0, evac: 0, total: model.metrics.total }];
+  const maxTime = Math.max(1, ...data.map(point => point.t));
+  const maxEvacuated = Math.max(1, model.metrics.total);
+
+  context.strokeStyle = '#e1eaf2';
+  context.lineWidth = 1;
+  for (let i = 1; i <= 3; i++) {
+    const y = height - 24 - (height - 42) * i / 3;
+    context.beginPath();
+    context.moveTo(35, y);
+    context.lineTo(width - 12, y);
+    context.stroke();
+  }
+
+  context.strokeStyle = '#287ecb';
+  context.lineWidth = 3;
+  context.beginPath();
+  data.forEach((point, index) => {
+    const x = 35 + (width - 47) * point.t / maxTime;
+    const y = height - 24 - (height - 42) * point.evac / maxEvacuated;
+    if (index) {
+      context.lineTo(x, y);
+    } else {
+      context.moveTo(x, y);
+    }
+  });
+  context.stroke();
+
+  context.fillStyle = '#6c8097';
+  context.font = '18px system-ui';
+  context.fillText('0', 14, height - 18);
+  context.fillText(String(maxEvacuated), 8, 25);
+  context.fillText(fmt(maxTime, 0) + ' s', width - 69, height - 8);
+  context.fillText('Evacuated', 40, 25);
+}
+
+function pointer(event) {
+  const rect = canvas.getBoundingClientRect();
+  return [
+    (event.clientX - rect.left) * W / rect.width,
+    (event.clientY - rect.top) * H / rect.height,
+  ];
+}
+
+canvas.addEventListener('mousemove', event => {
+  if (!model) {
+    return;
+  }
+
+  const position = pointer(event);
+  const node = nearNode(...position);
+  hover = nearEdge(...position);
+  if (node) {
+    $('tooltip').textContent = node.type === 'exit'
+      ? `${node.id} · evacuation exit`
+      : `${node.id} → ${model.signs?.[node.id]?.next || 'no available route'} · ${
+        model.signs?.[node.id]?.source || 'guidance'
+      }`;
+  } else if (hover) {
+    $('tooltip').textContent = (
+      `${hover.a}–${hover.b} · length ${fmt(hover.length, 2)}m · `
+      + `${hover.a}→${hover.b} ${fmt(hover.cost_ab, 2)}s / `
+      + `${hover.b}→${hover.a} ${fmt(hover.cost_ba, 2)}s`
+      + `${hover.blocked ? ' · BLOCKED' : ''}`
+    );
+  } else {
+    $('tooltip').textContent = 'Hover over a connection to inspect its cost.';
+  }
+
+  draw();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hover = null;
+  draw();
+});
+
+canvas.addEventListener('click', async event => {
+  const edge = nearEdge(...pointer(event));
+  if (edge) {
+    await send('block', { key: edge.id });
+  }
+});
+
+async function api(action, body = null) {
+  const response = await fetch('/api/' + action, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw Error(result.error || 'Request failed');
+  }
+  return result;
+}
+
+async function send(name, body) {
+  try {
+    model = await api(name, body);
+    $('error').textContent = '';
+    recordTrend();
+    draw();
+    return true;
+  } catch (error) {
+    $('error').textContent = error.message;
+    pause();
+    return false;
+  }
+}
+
+function recordTrend() {
+  if (!model) {
+    return;
+  }
+  if (model.time === 0) {
+    trend = [{ t: 0, evac: 0 }];
+    return;
+  }
+
+  const lastPoint = trend[trend.length - 1];
+  if (!lastPoint || model.time - lastPoint.t > .65 || model.complete) {
+    trend.push({ t: model.time, evac: model.metrics.evacuated });
+  }
+}
+
+function pause() {
+  running = false;
+  if (timer !== null) {
+    clearInterval(timer);
+  }
+  timer = null;
+  $('play').textContent = '▶ Start';
+}
+
+async function tick() {
+  if (busy || !running) {
+    return;
+  }
+
+  busy = true;
+  await send('step', { steps: Number($('speedup').value) });
+  busy = false;
+}
+
+$('play').onclick = () => {
+  if (running) {
+    pause();
+    return;
+  }
+  if (model?.complete) {
+    return;
+  }
+
+  running = true;
+  $('play').textContent = 'Ⅱ Pause';
+  timer = setInterval(tick, 200);
+};
+
+$('reset').onclick = async () => {
+  pause();
+  await send('reset', {});
+  $('play').textContent = '▶ Start';
+};
+
+$('algorithm').onchange = async () => {
+  pause();
+  const next = $('algorithm').value;
+  if (!await send('algo', { algorithm: next })) {
+    $('algorithm').value = model.algorithm;
+  }
+};
+
+$('selected-room').onchange = () => draw();
+$('show-costs').onchange = draw;
+$('show-people').onchange = draw;
+$('show-signs').onchange = draw;
+
+$('apply').onclick = async () => {
+  pause();
+
+  const lengths = {};
+  for (const edge of model.edges) {
+    const input = $('len-' + edge.id);
+    if (input.value.trim()) {
+      lengths[edge.id] = Number(input.value);
+    }
+  }
+
+  const rooms = ['K1', 'K2', 'K3', 'K4', 'K5', 'K6'];
+  const config = {
+    population: Object.fromEntries(
+      rooms.map(room => [room, Number($('pop-' + room).value)]),
+    ),
+    speed: Number($('walk-speed').value),
+    corridor_flow: Number($('corridor-flow').value),
+    exit_capacity: Number($('exit-capacity').value),
+    lengths,
+  };
+  await send('config', config);
+};
+
+function renderConfig() {
+  const holder = $('room-fields');
+  holder.innerHTML = '';
+  for (const room of ['K1', 'K2', 'K3', 'K4', 'K5', 'K6']) {
+    const element = document.createElement('div');
+    element.className = 'field';
+    element.innerHTML = `
+      <label for="pop-${room}">Students ${room}</label>
+      <input
+        id="pop-${room}"
+        type="number"
+        min="0"
+        max="150"
+        value="${model.config.population[room]}"
+      >
+    `;
+    holder.append(element);
+  }
+
+  $('walk-speed').value = model.config.speed;
+  $('corridor-flow').value = model.config.corridor_flow;
+  $('exit-capacity').value = model.config.exit_capacity;
+
+  const lengthHolder = $('length-grid');
+  lengthHolder.innerHTML = '';
+  for (const edge of model.edges) {
+    const element = document.createElement('div');
+    element.className = 'field';
+    element.innerHTML = `
+      <label>${edge.a}–${edge.b}</label>
+      <input
+        id="len-${edge.id}"
+        type="number"
+        min="0.1"
+        step="0.1"
+        placeholder="${edge.length}"
+        value="${model.config.lengths[edge.id] ?? ''}"
+      >
+    `;
+    lengthHolder.append(element);
+  }
+}
+
+async function boot() {
+  try {
+    model = await api('state');
+    $('algorithm').value = model.algorithm;
+    renderConfig();
+    recordTrend();
+    draw();
+  } catch (error) {
+    $('connection').textContent = 'Server disconnected';
+    $('error').textContent = (
+      'Cannot connect to Python server. Start it using: py server.py'
+    );
+  }
+}
+
+base.onload = () => draw();
+boot();
+</script>
+</body>
+</html>

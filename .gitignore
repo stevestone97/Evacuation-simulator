@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+c_algorithm/*.exe
+c_algorithm/*.o
+c_algorithm/test_routing
